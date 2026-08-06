@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gym Tracker Pro</title>
+
+    <!-- Configuración para Móvil (PWA) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gym Pro">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/flexed-biceps.png">
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Gym Tracker Pro","short_name":"GymPro","start_url":".","display":"standalone","background_color":"#121212","theme_color":"#00d2ff","icons":[{"src":"https://img.icons8.com/color/192/flexed-biceps.png","sizes":"192x192","type":"image/png"}]}'>
+<link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e24;
+            --text-main: #f5f6fa;
+            --text-muted: #a4b0be;
+            --accent-color: #00d2ff;
+            --accent-hover: #3a7bd5;
+            --btn-save: #2ed573;
+            --timer-bg: #ff4757;
+            --btn-danger: #ff4757;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a1a24 0%, #121212 100%);
+            border-bottom: 2px solid var(--accent-color);
+            text-align: center;
+            padding: 1.2rem 0;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2);
+        }
+        
+        header h1 {
+            margin: 0 0 3px 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+        }
+        
+        header p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 10px auto;
+            padding: 0 12px;
+            padding-bottom: 40px;
+        }
+
+        /* Cronómetro */
+        .timer-box {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid var(--timer-bg);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .timer-display {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--timer-bg);
+            margin-bottom: 6px;
+        }
+        .timer-btns {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+        .timer-btns button {
+            background: var(--timer-bg);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .timer-btns button:hover { opacity: 0.8; }
+
+        .export-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .btn-export {
+            background-color: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        .btn-export:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* Pestañas */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button.tab-btn {
+            background-color: var(--card-bg);
+            border: 1px solid #333;
+            color: var(--text-muted);
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        button.tab-btn.active {
+            background-color: rgba(0, 210, 255, 0.1);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .routine {
+            display: none;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+        .routine.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .routine-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
+        }
+        .routine-icon {
+            font-size: 30px;
+            background: rgba(255,255,255,0.05);
+            padding: 6px;
+            border-radius: 50%;
+        }
+
+        /* Ejercicios */
+        .exercise {
+            border-left: 4px solid var(--accent-color);
+            background-color: #25252d;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .exercise-header-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .exercise h3 { margin: 0; font-size: 15px; color: #fff; }
+        .exercise p { margin: 0 0 10px 0; color: var(--text-muted); font-size: 12px; }
+        
+        .btn-info {
+            background: rgba(0, 210, 255, 0.15);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--btn-danger);
+            border: 1px solid var(--btn-danger);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        
+        /* Tracker de 4 Series por ejercicio */
+        .tracker {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #444;
+        }
+        .series-inputs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .s-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .s-input input {
+            background-color: #121212;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            padding: 5px 2px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            margin-top: 2px;
+        }
+        .tracker-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .btn-primary {
+            background-color: var(--btn-save);
+            color: #121212;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .add-exercise-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .btn-add {
+            background-color: transparent;
+            border: 1px dashed var(--accent-color);
+            color: var(--accent-color);
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn-add:hover {
+            background-color: rgba(0, 210, 255, 0.05);
+        }
+
+        /* Ventana Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            background-color: #1e1e24;
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            max-width: 400px;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+            text-align: left;
+            animation: scaleUp 0.3s ease;
+        }
+        .modal-content h3 { margin-top: 0; color: var(--accent-color); text-align: center; margin-bottom: 12px; font-size: 17px; }
+        .modal-content p { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0; }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* Perfil */
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .profile-item { display: flex; flex-direction: column; gap: 3px; }
+        .profile-item label { font-size: 11px; color: var(--text-muted); font-weight: bold; }
+        .profile-item input, .profile-item select { background-color: #121212; border: 1px solid #444; color: white; border-radius: 6px; padding: 7px; font-size: 13px;}
+        .btn-calc { width: 100%; background-color: var(--accent-color); color: #121212; font-size: 14px; margin-bottom: 12px; }
+        .results-box { background-color: #121212; border: 1px solid #444; border-radius: 8px; padding: 10px; }
+        .result-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #333; }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: var(--text-muted); font-size: 12px; }
+        .result-val { font-size: 15px; font-weight: bold; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.9); } to { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>⚡ Gym Tracker Pro</h1>
+    <p>Control de Métricas y Guías Técnicas</p>
+</header>
+
+<div class="container">
+    
+    <!-- Cronómetro -->
+    <div class="timer-box">
+        <div class="timer-display" id="timer-text">01:30</div>
+        <div class="timer-btns">
+            <button onclick="iniciarTimer(60)">60s</button>
+            <button onclick="iniciarTimer(90)">90s</button>
+            <button onclick="iniciarTimer(120)">120s</button>
+            <button onclick="pausarTimer()" style="background:#555;">Pausar</button>
+        </div>
+    </div>
+
+    <div class="export-container">
+        <button class="btn-export" onclick="exportarDatos()">💾 Exportar mis datos (Backup)</button>
+    </div>
+
+    <!-- Pestañas -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showRoutine('perfil', event)">👤 Perfil</button>
+        <button class="tab-btn" onclick="showRoutine('dia1', event)">Día 1</button>
+        <button class="tab-btn" onclick="showRoutine('dia2', event)">Día 2</button>
+        <button class="tab-btn" onclick="showRoutine('dia3', event)">Día 3</button>
+    </div>
+
+    <!-- PERFIL -->
+    <div id="perfil" class="routine active">
+        <div class="routine-header">
+            <div class="routine-icon">🧬</div>
+            <div>
+                <h2 style="margin: 0; color: #fff; font-size: 17px;">Métricas Corporales</h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">IMC, Riesgo Abdominal y Calorías</p>
+            </div>
+        </div>
+        <div class="exercise" style="border-left-color: #9b59b6;">
+            <div class="profile-grid">
+                <div class="profile-item"><label>Género</label><select id="calc-genero"><option value="M">Hombre</option><option value="F">Mujer</option></select></div>
+                <div class="profile-item"><label>Edad</label><input type="number" id="calc-edad" placeholder="Ej: 25"></div>
+                <div class="profile-item"><label>Peso (kg)</label><input type="number" id="calc-peso" placeholder="Ej: 75" step="0.1"></div>
+                <div class="profile-item"><label>Altura (cm)</label><input type="number" id="calc-altura" placeholder="Ej: 175"></div>
+                <div class="profile-item"><label>Cintura (cm)</label><input type="number" id="calc-cintura" placeholder="Ej: 80"></div>
+                <div class="profile-item"><label>Bíceps (cm)</label><input type="number" id="calc-biceps" placeholder="Ej: 35"></div>
+            </div>
+            <button class="btn-primary btn-calc" onclick="calcularMetricas()">Calcular y Guardar</button>
+            <div class="results-box">
+                <div class="result-item"><span class="result-label">IMC:</span><span class="result-val" id="res-imc">--</span></div>
+                <div class="result-item"><span class="result-label">Cintura/Altura:</span><span class="result-val" id="res-cintura">--</span></div>
+                <div class="result-item"><span class="result-label">TMB (Calorías):</span><span class="result-val" id="res-tmb" style="color: var(--accent-color);">-- kcal</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DÍA 1: EMPUJE (2 Pecho, 2 Tríceps - 4 Series cada uno) -->
+    <div id="dia1" class="routine">
+        <div class="routine-header">
+            <div class="routine-icon">🦍</div>
+            <div>
+                <h2 style="margin: 0; color: #fff; font-size: 17px;">Día 1: Empuje</h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">2 Pecho y 2 Tríceps (4 Series)</p>
+            </div>
+        </div>
+        
+        <div id="ejercicios-dia1">
+            <!-- PECHO 1 -->
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>1. Press de banca plano</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Press de Banca Plano', '1. Acuéstate en el banco con los ojos alineados debajo de la barra.\n2. Agarra la barra un poco más ancha que los hombros y retrae las escápulas firmemente.\n3. Baja la barra de forma controlada hasta la altura media del pecho y empuja verticalmente hacia arriba.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="pb-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="pb-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="pb-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="pb-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('pb', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PECHO 2 -->
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>2. Press inclinado con mancuernas</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Press inclinado con mancuernas', '1. Ajusta el banco a unos 30-45 grados de inclinación.\n2. Sube las mancuernas y mantén los pies bien apoyados en el suelo.\n3. Baja de forma controlada estirando el pectoral superior y empuja hacia arriba sin juntar demasiado las mancuernas arriba.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="pi-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="pi-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="pi-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="pi-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('pi', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRÍCEPS 1 -->
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>3. Extensión de tríceps en polea</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Extensión de tríceps en polea', '1. Colócate frente a la polea alta sujetando el agarre con firmeza.\n2. Mantén los codos pegados rígidamente a los costados del cuerpo y el torso levemente inclinado al frente.\n3. Extiende los brazos hacia abajo contrayendo con fuerza el tríceps al final del movimiento.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="tp-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="tp-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="tp-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="tp-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('tp', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRÍCEPS 2 -->
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>4. Press francés con barra EZ</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Press francés con barra EZ', '1. Acuéstate en un banco plano sosteniendo la barra EZ con un agarre firme.\n2. Manteniendo los codos fijos y apuntando hacia el techo, flexiona los brazos llevando la barra hacia tu frente o detrás de la cabeza.\n3. Extiende los brazos de forma controlada.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="pf-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="pf-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="pf-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="pf-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('pf', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="add-exercise-container">
+            <button class="btn-add" onclick="agregarEjercicio('ejercicios-dia1')">➕ Añadir ejercicio a Día 1</button>
+        </div>
+    </div>
+
+    <!-- DÍA 2: TIRÓN (4 Series) -->
+    <div id="dia2" class="routine">
+        <div class="routine-header">
+            <div class="routine-icon">🦅</div>
+            <div>
+                <h2 style="margin: 0; color: #fff; font-size: 17px;">Día 2: Tirón</h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Dorsal y Bíceps (4 Series)</p>
+            </div>
+        </div>
+        
+        <div id="ejercicios-dia2">
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>1. Jalón al pecho en polea</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Jalón al pecho en polea', '1. Sujeta la barra con un agarre amplio y asegura las piernas bajo los rodillos de soporte.\n2. Saca el pecho hacia afuera y mantén la columna recta con una ligera inclinación hacia atrás.\n3. Tira de los codos hacia abajo y hacia tus costados llevando la barra directo hacia la parte superior del pecho.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="jp-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="jp-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="jp-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="jp-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('jp', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>2. Remo sentado en máquina</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Remo sentado en máquina', '1. Apoya firmemente los pies en la plataforma y mantén la espalda recta.\n2. Sujeta las manijas y tira de ellas hacia tu abdomen bajo controlando la postura.\n3. Junta las escápulas al final de la tracción y regresa despacio sin encorvarte.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="rs-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="rs-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="rs-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="rs-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('rs', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>3. Curl de bíceps con mancuernas</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Curl de bíceps con mancuernas', '1. De pie o sentado, sostén las mancuernas con las palmas orientadas hacia tus muslos.\n2. Flexiona los codos elevando el peso y rota las muñecas hacia afuera al subir (supinación).\n3. Desciende el peso de forma controlada evitando balancear el cuerpo.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="cb-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="cb-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="cb-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="cb-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('cb', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>4. Curl tipo martillo con mancuernas</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Curl tipo martillo con mancuernas', '1. Sostén las mancuernas a los lados con las palmas mirándose entre sí (agarre neutro).\n2. Eleva el peso manteniendo los codos fijos sin rotar las muñecas.\n3. Desciende de forma controlada trabajando el braquial y el antebrazo.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="cm-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="cm-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="cm-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="cm-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('cm', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="add-exercise-container">
+            <button class="btn-add" onclick="agregarEjercicio('ejercicios-dia2')">➕ Añadir ejercicio a Día 2</button>
+        </div>
+    </div>
+
+    <!-- DÍA 3: BASE (4 Series) -->
+    <div id="dia3" class="routine">
+        <div class="routine-header">
+            <div class="routine-icon">🦖</div>
+            <div>
+                <h2 style="margin: 0; color: #fff; font-size: 17px;">Día 3: Base</h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Pierna y Hombro (4 Series)</p>
+            </div>
+        </div>
+        
+        <div id="ejercicios-dia3">
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>1. Prensa de piernas (Leg Press)</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Prensa de piernas (Leg Press)', '1. Coloca los pies en la plataforma separados a la anchura de tus hombros.\n2. Desbloquea el seguro y baja el peso de manera controlada cuidando que las lumbares no se despeguen del asiento.\n3. Empuja con fuerza usando toda la planta del pie sin llegar a bloquear las rodillas arriba.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="pr-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="pr-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="pr-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="pr-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('pr', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>2. Extensión de cuádriceps</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Extensión de cuádriceps', '1. Ajusta el respaldo y sitúa el rodillo justo en la parte baja de tus espinillas.\n2. Eleva el peso extendiendo las piernas por completo y sostén la contracción arriba por un segundo.\n3. Baja despacio controlando la bajada en todo momento.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 12-15 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="ec-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="ec-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="ec-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="ec-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('ec', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>3. Curl femoral tumbado</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Curl femoral tumbado', '1. Acuéstate boca abajo en la máquina con el rodillo apoyado justo debajo de tus pantorrillas (cerca de los talones).\n2. Flexiona las piernas llevando los talones hacia tus glúteos sin levantar la cadera del banco.\n3. Regresa de manera controlada.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="cf-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="cf-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="cf-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="cf-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('cf', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-header-line">
+                    <h3>4. Press militar de hombro</h3>
+                    <div>
+                        <button class="btn-info" onclick="abrirModal('Press militar de hombro', '1. Siéntate con la espalda firmemente apoyada en el respaldo y el abdomen contraído para proteger la zona lumbar.\n2. Sujeta las manijas a la altura de los hombros y presiona verticalmente hacia arriba.\n3. Desciende el peso de forma controlada hasta la altura de la barbilla.')">Ver técnica</button>
+                        <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                    </div>
+                </div>
+                <p><strong>4 Series | 10-12 Reps</strong></p>
+                <div class="tracker">
+                    <div class="series-inputs">
+                        <div class="s-input"><label>S1 (kg)</label><input type="number" id="pm-1" placeholder="-"></div>
+                        <div class="s-input"><label>S2 (kg)</label><input type="number" id="pm-2" placeholder="-"></div>
+                        <div class="s-input"><label>S3 (kg)</label><input type="number" id="pm-3" placeholder="-"></div>
+                        <div class="s-input"><label>S4 (kg)</label><input type="number" id="pm-4" placeholder="-"></div>
+                    </div>
+                    <div class="tracker-footer">
+                        <button class="btn-primary" onclick="guardarEjercicio('pm', this)">Guardar Series</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="add-exercise-container">
+            <button class="btn-add" onclick="agregarEjercicio('ejercicios-dia3')">➕ Añadir ejercicio a Día 3</button>
+        </div>
+    </div>
+</div>
+
+<!-- VENTANA MODAL PARA TÉCNICA -->
+<div id="modalTecnica" class="modal" onclick="cerrarModalAfuera(event)">
+    <div class="modal-content">
+        <button class="close-btn" onclick="cerrarModal()">&times;</button>
+        <h3 id="modalTitulo">Título</h3>
+        <p id="modalTexto" style="white-space: pre-line;">Instrucciones...</p>
+    </div>
+</div>
+
+<script>
+    function showRoutine(id, event) {
+        document.querySelectorAll('.routine').forEach(r => r.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    function abrirModal(titulo, texto) {
+        document.getElementById('modalTitulo').innerText = titulo;
+        document.getElementById('modalTexto').innerText = texto;
+        document.getElementById('modalTecnica').style.display = 'flex';
+    }
+    function cerrarModal() {
+        document.getElementById('modalTecnica').style.display = 'none';
+    }
+    function cerrarModalAfuera(event) {
+        if(event.target.id === 'modalTecnica') { cerrarModal(); }
+    }
+
+    let cuentaRegresiva = null;
+    function iniciarTimer(segundos) {
+        clearInterval(cuentaRegresiva);
+        let tiempoRestante = segundos;
+        actualizarDisplayTimer(tiempoRestante);
+        cuentaRegresiva = setInterval(() => {
+            tiempoRestante--;
+            actualizarDisplayTimer(tiempoRestante);
+            if (tiempoRestante <= 0) {
+                clearInterval(cuentaRegresiva);
+                alert("¡Tiempo de descanso terminado! A por la siguiente serie 🔥");
+            }
+        }, 1000);
+    }
+    function pausarTimer() { clearInterval(cuentaRegresiva); }
+    function actualizarDisplayTimer(segundos) {
+        const min = Math.floor(segundos / 60);
+        const seg = segundos % 60;
+        document.getElementById('timer-text').innerText = (min < 10 ? "0" + min : min) + ":" + (seg < 10 ? "0" + seg : seg);
+    }
+
+    function calcularMetricas() {
+        const genero = document.getElementById('calc-genero').value;
+        const edad = parseInt(document.getElementById('calc-edad').value);
+        const peso = parseFloat(document.getElementById('calc-peso').value);
+        const altura = parseInt(document.getElementById('calc-altura').value);
+        const cintura = parseFloat(document.getElementById('calc-cintura').value);
+        const biceps = parseFloat(document.getElementById('calc-biceps').value);
+
+        if(!edad || !peso || !altura) { alert("Rellena al menos edad, peso y altura."); return; }
+
+        localStorage.setItem('perfil-genero', genero);
+        localStorage.setItem('perfil-edad', edad);
+        localStorage.setItem('perfil-peso', peso);
+        localStorage.setItem('perfil-altura', altura);
+        if(cintura) localStorage.setItem('perfil-cintura', cintura);
+        if(biceps) localStorage.setItem('perfil-biceps', biceps);
+
+        const imc = (peso / ((altura/100) * (altura/100))).toFixed(1);
+        let cat = imc < 18.5 ? "Bajo peso" : imc < 25 ? "Saludable" : imc < 30 ? "Sobrepeso" : "Obesidad";
+        document.getElementById('res-imc').innerText = `${imc} (${cat})`;
+
+        if(cintura) {
+            const ratio = (cintura / altura).toFixed(2);
+            let riesgo = ratio < 0.5 ? "Saludable" : ratio < 0.6 ? "Alerta riesgo" : "Alto riesgo abdominal";
+            document.getElementById('res-cintura').innerText = `${ratio} (${riesgo})`;
+        } else {
+            document.getElementById('res-cintura').innerText = "Falta medir cintura";
+        }
+
+        let tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + (genero === 'M' ? 5 : -161);
+        document.getElementById('res-tmb').innerText = Math.round(tmb) + " kcal";
+        alert("¡Métricas y medidas guardadas!");
+    }
+
+    function guardarEjercicio(prefix, btn) {
+        let guardado = false;
+        for(let i=1; i<=4; i++) {
+            const input = document.getElementById(prefix + '-' + i);
+            if(input && input.value) {
+                localStorage.setItem(prefix + '-' + i, input.value);
+                guardado = true;
+            }
+        }
+        if(guardado) {
+            const originalText = btn.innerText;
+            btn.innerText = "¡Guardado!";
+            setTimeout(() => btn.innerText = originalText, 1000);
+        } else {
+            alert("Introduce al menos un valor de peso.");
+        }
+    }
+
+    function agregarEjercicio(containerId) {
+        const nombre = prompt("Nombre del nuevo ejercicio:");
+        if(!nombre) return;
+        const seriesInfo = prompt("Series y repeticiones:", "4 Series | 10-12 Reps");
+        const tecnica = prompt("Breve descripción de la técnica:", "1. Mantén la postura correcta.\n2. Ejecuta de forma controlada.");
+
+        const idUnico = 'ex_' + Math.random().toString(36).substring(2, 9);
+        const contenedor = document.getElementById(containerId);
+
+        const nuevoDiv = document.createElement('div');
+        nuevoDiv.className = 'exercise';
+        nuevoDiv.innerHTML = `
+            <div class="exercise-header-line">
+                <h3>${nombre}</h3>
+                <div>
+                    <button class="btn-info" onclick="abrirModal('${nombre}', \`${tecnica || 'Ejecuta el movimiento con buena técnica.'}\`)">Ver técnica</button>
+                    <button class="btn-delete" onclick="eliminarEjercicio(this)">🗑️</button>
+                </div>
+            </div>
+            <p><strong>${seriesInfo || '4 Series | 10-12 Reps'}</strong></p>
+            <div class="tracker">
+                <div class="series-inputs">
+                    <div class="s-input"><label>S1 (kg)</label><input type="number" id="${idUnico}-1" placeholder="-"></div>
+                    <div class="s-input"><label>S2 (kg)</label><input type="number" id="${idUnico}-2" placeholder="-"></div>
+                    <div class="s-input"><label>S3 (kg)</label><input type="number" id="${idUnico}-3" placeholder="-"></div>
+                    <div class="s-input"><label>S4 (kg)</label><input type="number" id="${idUnico}-4" placeholder="-"></div>
+                </div>
+                <div class="tracker-footer">
+                    <button class="btn-primary" onclick="guardarEjercicio('${idUnico}', this)">Guardar Series</button>
+                </div>
+            </div>
+        `;
+        contenedor.appendChild(nuevoDiv);
+    }
+
+    function eliminarEjercicio(btn) {
+        if(confirm("¿Seguro que deseas eliminar este ejercicio?")) {
+            const exerciseEl = btn.closest('.exercise');
+            exerciseEl.remove();
+        }
+    }
+
+    window.onload = function() {
+        document.querySelectorAll('.s-input input').forEach(input => {
+            const val = localStorage.getItem(input.id);
+            if(val) {
+                input.value = val;
+            }
+        });
+        if(localStorage.getItem('perfil-peso')) {
+            document.getElementById('calc-genero').value = localStorage.getItem('perfil-genero') || 'M';
+            document.getElementById('calc-edad').value = localStorage.getItem('perfil-edad');
+            document.getElementById('calc-peso').value = localStorage.getItem('perfil-peso');
+            document.getElementById('calc-altura').value = localStorage.getItem('perfil-altura');
+            if(localStorage.getItem('perfil-cintura')) document.getElementById('calc-cintura').value = localStorage.getItem('perfil-cintura');
+            if(localStorage.getItem('perfil-biceps')) document.getElementById('calc-biceps').value = localStorage.getItem('perfil-biceps');
+            calcularMetricas();
+        }
+    }
+
+    function exportarDatos() {
+        let texto = "💪 MI PROGRESO GYM PRO (4 Series) 💪\n\n";
+        document.querySelectorAll('.exercise').forEach(ex => {
+            const tituloEl = ex.querySelector('h3');
+            if(tituloEl) {
+                const nombre = tituloEl.innerText;
+                const inputs = ex.querySelectorAll('.s-input input');
+                let tieneDatos = false;
+                let linea = `${nombre}: `;
+                inputs.forEach((inp, idx) => {
+                    const val = localStorage.getItem(inp.id);
+                    if(val) {
+                        tieneDatos = true;
+                        linea += `[S${idx+1}: ${val}kg] `;
+                    }
+                });
+                if(tieneDatos) {
+                    texto += linea + "\n";
+                }
+            }
+        });
+        const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Progreso_Gym_4Series.txt";
+        link.click();
+    }
+</script>
+</body>
+</html>
